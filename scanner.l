@@ -46,6 +46,7 @@ struct yyltype yylloc; // manually dclared for pp1, later Yacc provides
 static void DoBeforeEachAction();
 #define YY_USER_ACTION DoBeforeEachAction();
 
+int numLines = 0, col = 0;
 
 %}
 
@@ -60,21 +61,48 @@ static void DoBeforeEachAction();
 %option noyywrap
 
 
-DIGIT    [0-9]*
-ALPHA    [a-zA-Z]*
+DIGIT    [0-9]
+LETTER   [a-zA-Z]
+KEYWORD  void|int|double|bool|string|class|interface|null|this|extends|implements|for|while|if|else|return|break|new|NewArray|Print|ReadInteger|ReadLine
 
 %%             /* BEGIN RULES SECTION */
  /* All patterns and actions should be placed between the start and stop
   * %% markers which delimit the Rules section.
   */
 
-{DIGIT}+    {
-            printf( "An integer: %s (%d)\n", yytext,
-                    atoi( yytext ) );
-            }
-{ALPHA}+    printf( "An identifier: %s\n", yytext );
-
-
+"if"          { return T_If; }
+"or"          { return T_Or; }
+"int"         { return T_Int; }
+"for"         { return T_For; }
+"new"         { return T_New; }
+"bool"        { return T_Bool; }
+"else"        { return T_Else; }
+"null"        { return T_Null; }
+"this"        { return T_This; }
+"true"        { return T_BoolConstant; yylval.boolConstant = "true";}
+"void"        { return T_Void; }
+"break"       { return T_Break; }
+"class"       { return T_Class; }
+"false"       { return T_BoolConstant; ; yylval.boolConstant = "false";}
+"while"       { return T_While; }
+"Print"       { return T_Print; }
+"double"      { return T_Double; }
+"return"      { return T_Return; }
+"string"      { return T_String; }
+"extends"     { return T_Extends; }
+"NewArray"    { return T_NewArray; }
+"ReadLine"    { return T_ReadLine; }
+"interface"   { return T_Interface; }
+"implements"  { return T_Implements; }
+"ReadInteger" { return T_ReadInteger; }
+{LETTER}({DIGIT}|{LETTER}|_)* { if (yyleng > MaxIdentLen)
+                                {
+                                    ReportError::LongIdentifier(&yylloc, yytext);
+                                }
+                                return T_Identifier; }
+[ \t]+        /* eat up whitespace */
+[\n]          /* eat up newlines and ensure that they are read one at a time so line counts can be updated*/
+.             { ReportError::UnrecogChar(&yylloc, yytext[0]); }
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
  * of the User Subroutines section. All text from here to the end of the
@@ -99,6 +127,7 @@ void InitScanner()
 {
     PrintDebug("lex", "Initializing scanner");
     yy_flex_debug = false;
+    numLines = 1;
 }
 
 
@@ -109,4 +138,23 @@ void InitScanner()
  */
 static void DoBeforeEachAction()
 {
+    //memset(&yylval,0, sizeof(yylval));
+    yylloc.first_line = numLines;
+
+    // Handle column position
+    yylloc.first_column = col + 1;
+    if (yyleng >= 1 && yytext[0] == '\n')
+    {
+         col = 0; ++numLines;
+    }
+    else
+    {
+        /*
+        * Update current column only when NOT
+        * reading a newline character
+        */
+
+        col += yyleng;
+    }
+    yylloc.last_column = col;
 }
