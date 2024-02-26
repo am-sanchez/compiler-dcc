@@ -11,7 +11,9 @@
  * or C++ variable declarations/prototypes that are needed by your code here.
  */
 
-#include <string.h>
+#include <string>
+#include <iostream>
+#include <sstream>
 #include "scanner.h"
 #include "utility.h" // for PrintDebug()
 #include "errors.h"
@@ -46,7 +48,20 @@ struct yyltype yylloc; // manually dclared for pp1, later Yacc provides
 static void DoBeforeEachAction();
 #define YY_USER_ACTION DoBeforeEachAction();
 
+/* Number of columns per tab, i.e. '\t' */
+static const int TAB_SIZE = 8;
+
 int numLines = 0, col = 0;
+char lastCharOfPrevToken;
+std::stringstream stream;
+
+/*
+ * Not sure what to allow for max string constant size_t
+ * since MAX_SIZE produces bad malloc warnings when
+ * used to instantiate char array.
+ */
+const size_t BUFF_SIZE {1024 * 4};
+auto copiedString {std::make_unique<char[]>(BUFF_SIZE)};
 
 %}
 
@@ -61,17 +76,43 @@ int numLines = 0, col = 0;
 %option noyywrap
 
 
-DIGIT    [0-9]
-LETTER   [a-zA-Z]
+IDENT    [[:alpha:]][[:alnum:]_]*
 KEYWORD  void|int|double|bool|string|class|interface|null|this|extends|implements|for|while|if|else|return|break|new|NewArray|Print|ReadInteger|ReadLine
+SINGLEOP [+\-*/%<>=!;,\.\[\]\(\)\{\}]
+DOUBLECONST [[:digit:]]+\.[[:digit:]]+("E"\+[[:digit:]]+)?
 
 %%             /* BEGIN RULES SECTION */
  /* All patterns and actions should be placed between the start and stop
   * %% markers which delimit the Rules section.
   */
 
+\/\/.*$      /* eat single line comments*/
+\"[^\n]*\"      {
+                // Handle String Constants
+                // Clear instantiated char array
+                memset(copiedString.get(), 0, BUFF_SIZE);
+
+                /*
+                 * Remove leading and trailing double quote characters
+                 * by copying yytext, less the first and last characters,
+                 * into copiedString.
+                 */
+                memcpy(copiedString.get(), yytext + 1, yyleng - 2);
+
+                yylval.stringConstant = copiedString.get();
+                return T_StringConstant; }
+
+"<="        { return T_LessEqual; }
+">="        { return T_GreaterEqual; }
+"=="        { return T_Equal; }
+"!="        { return T_NotEqual; }
+"&&"        { return T_And; }
+"||"        { return T_Or; }
+"[]"        { return T_Dims; }
+{SINGLEOP}     {return static_cast<int>(*yytext); }
+[[:digit:]]+    { stream >> yylval.integerConstant; return T_IntConstant; }
+{DOUBLECONST} {return T_DoubleConstant; }
 "if"          { return T_If; }
-"or"          { return T_Or; }
 "int"         { return T_Int; }
 "for"         { return T_For; }
 "new"         { return T_New; }
@@ -79,11 +120,11 @@ KEYWORD  void|int|double|bool|string|class|interface|null|this|extends|implement
 "else"        { return T_Else; }
 "null"        { return T_Null; }
 "this"        { return T_This; }
-"true"        { return T_BoolConstant; yylval.boolConstant = "true";}
+"true"        { yylval.boolConstant = true; return T_BoolConstant;}
 "void"        { return T_Void; }
 "break"       { return T_Break; }
 "class"       { return T_Class; }
-"false"       { return T_BoolConstant; ; yylval.boolConstant = "false";}
+"false"       { yylval.boolConstant = false; return T_BoolConstant;}
 "while"       { return T_While; }
 "Print"       { return T_Print; }
 "double"      { return T_Double; }
@@ -95,13 +136,16 @@ KEYWORD  void|int|double|bool|string|class|interface|null|this|extends|implement
 "interface"   { return T_Interface; }
 "implements"  { return T_Implements; }
 "ReadInteger" { return T_ReadInteger; }
-{LETTER}({DIGIT}|{LETTER}|_)* { if (yyleng > MaxIdentLen)
-                                {
-                                    ReportError::LongIdentifier(&yylloc, yytext);
-                                }
-                                return T_Identifier; }
-[ \t]+        /* eat up whitespace */
+{IDENT}         {   stream >> yylval.identifier;
+                    if (yyleng > MaxIdentLen)
+                    {
+                        ReportError::LongIdentifier(&yylloc, yytext);
+                    }
+                    return T_Identifier; }
+
 [\n]          /* eat up newlines and ensure that they are read one at a time so line counts can be updated*/
+[\t]
+[[:space:]]+        /* eat up whitespace */
 .             { ReportError::UnrecogChar(&yylloc, yytext[0]); }
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
@@ -138,7 +182,18 @@ void InitScanner()
  */
 static void DoBeforeEachAction()
 {
-    //memset(&yylval,0, sizeof(yylval));
+    // Clear yylval's buffer for each token
+    memset(&yylval,0, sizeof(yylval));
+
+    /*
+     * Swap used stream with default constructed sstream.
+     * This clears the stream and any error state.
+     * Equivalent to stream.str("") && stream.clear();
+     */
+    std::stringstream().swap(stream);
+    stream << yytext;
+
+    // Update line number
     yylloc.first_line = numLines;
 
     // Handle column position
@@ -146,6 +201,10 @@ static void DoBeforeEachAction()
     if (yyleng >= 1 && yytext[0] == '\n')
     {
          col = 0; ++numLines;
+    }
+    else if (yyleng >= 1 && yytext[0] == '\t')
+    {
+        col += TAB_SIZE;
     }
     else
     {
