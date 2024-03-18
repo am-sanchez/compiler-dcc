@@ -1,0 +1,17 @@
+
+3.1415e-3
+3.1415E+4
+3.1415E523
+
+/*
+infinthis if23(this
+// this is a comment // //
+    void     int         double       bool string class interface null this extends implements
+for */while if else return break new NewArray Print ReadInteger ReadLine
+test235325 35test *(&gsg)
+true        false
+3.1415E+332523f
+"This is a string"
+*/
+
+"adgsdlgjdsaljk
