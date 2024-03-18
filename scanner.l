@@ -12,6 +12,9 @@
  */
 
 #include <string>
+#include <iomanip>
+#include <cmath>
+#include <string_view>
 #include <iostream>
 #include <sstream>
 #include "scanner.h"
@@ -60,8 +63,9 @@ std::stringstream stream;
  * since MAX_SIZE produces bad malloc warnings when
  * used to instantiate char array.
  */
-const size_t BUFF_SIZE {1024 * 4};
+static const size_t BUFF_SIZE {1024 * 4};
 auto copiedString {std::make_unique<char[]>(BUFF_SIZE)};
+bool commentActive {false};
 
 %}
 
@@ -79,74 +83,161 @@ auto copiedString {std::make_unique<char[]>(BUFF_SIZE)};
 IDENT    [[:alpha:]][[:alnum:]_]*
 KEYWORD  void|int|double|bool|string|class|interface|null|this|extends|implements|for|while|if|else|return|break|new|NewArray|Print|ReadInteger|ReadLine
 SINGLEOP [+\-*/%<>=!;,\.\[\]\(\)\{\}]
-DOUBLECONST [[:digit:]]+\.[[:digit:]]+("E"\+[[:digit:]]+)?
+DOUBLECONST [[:digit:]]+\.[[:digit:]]+
+EXPONENT [[:digit:]]+\.[[:digit:]]+[Ee][\+\-]?[[:digit:]]+
+UNTERMSTRING \".*
 
 %%             /* BEGIN RULES SECTION */
  /* All patterns and actions should be placed between the start and stop
   * %% markers which delimit the Rules section.
   */
+<<EOF>>     {
+                if (commentActive)
+                {
+                    ReportError::UntermComment();
+                }
+                yyterminate();
+            }
+\/\*        {
+                // Begin Multiline comment
+                // If starting a multi-line comment, increment line number.
+                if (!commentActive) { ++numLines; }
+                commentActive = true;
+            }
+\*\/        {
+                // End Multiline comment
+                if (commentActive)
+                {
+                    commentActive = false;
+                }
+                else
+                {
+                    // TODO: How to handle '*/' if not closing a multiline comment?
+                    // Should this be a '*' token and '/' token?
+                    // For now, report as unrecognized tokens.
+                    {ReportError::UnrecogChar(&yylloc, yytext[0]);}
+                    {ReportError::UnrecogChar(&yylloc, yytext[1]);}
+                }
+            }
 
-\/\/.*$      /* eat single line comments*/
-\"[^\n]*\"      {
+\/\/.*$     /* consume single line comments */ { ++numLines; }
+\"[^\n]*\"  {
                 // Handle String Constants
                 // Clear instantiated char array
                 memset(copiedString.get(), 0, BUFF_SIZE);
-
                 /*
                  * Remove leading and trailing double quote characters
                  * by copying yytext, less the first and last characters,
                  * into copiedString.
                  */
                 memcpy(copiedString.get(), yytext + 1, yyleng - 2);
+                if (!commentActive)
+                {
+                    yylval.stringConstant = copiedString.get();
+                    return T_StringConstant;
+                }
+            }
 
-                yylval.stringConstant = copiedString.get();
-                return T_StringConstant; }
-
-"<="        { return T_LessEqual; }
-">="        { return T_GreaterEqual; }
-"=="        { return T_Equal; }
-"!="        { return T_NotEqual; }
-"&&"        { return T_And; }
-"||"        { return T_Or; }
-"[]"        { return T_Dims; }
-{SINGLEOP}     {return static_cast<int>(*yytext); }
-[[:digit:]]+    { stream >> yylval.integerConstant; return T_IntConstant; }
-{DOUBLECONST} {return T_DoubleConstant; }
-"if"          { return T_If; }
-"int"         { return T_Int; }
-"for"         { return T_For; }
-"new"         { return T_New; }
-"bool"        { return T_Bool; }
-"else"        { return T_Else; }
-"null"        { return T_Null; }
-"this"        { return T_This; }
-"true"        { yylval.boolConstant = true; return T_BoolConstant;}
-"void"        { return T_Void; }
-"break"       { return T_Break; }
-"class"       { return T_Class; }
-"false"       { yylval.boolConstant = false; return T_BoolConstant;}
-"while"       { return T_While; }
-"Print"       { return T_Print; }
-"double"      { return T_Double; }
-"return"      { return T_Return; }
-"string"      { return T_String; }
-"extends"     { return T_Extends; }
-"NewArray"    { return T_NewArray; }
-"ReadLine"    { return T_ReadLine; }
-"interface"   { return T_Interface; }
-"implements"  { return T_Implements; }
-"ReadInteger" { return T_ReadInteger; }
-{IDENT}         {   stream >> yylval.identifier;
-                    if (yyleng > MaxIdentLen)
+"<="            { if (!commentActive) {return T_LessEqual;} }
+">="            { if (!commentActive) {return T_GreaterEqual;} }
+"=="            { if (!commentActive) {return T_Equal;} }
+"!="            { if (!commentActive) {return T_NotEqual;} }
+"&&"            { if (!commentActive) {return T_And;} }
+"||"            { if (!commentActive) {return T_Or;} }
+"[]"            { if (!commentActive) {return T_Dims;} }
+{SINGLEOP}      { if (!commentActive) {return static_cast<int>(*yytext);} }
+[[:digit:]]+    { if (!commentActive) {stream >> yylval.integerConstant; return T_IntConstant;} }
+{EXPONENT}  {
+                if (!commentActive)
+                {
+                    std::string number;
+                    std::string suffix;
+                    bool positiveExp {true};
+                    bool foundE {false};
+                    for (auto item : std::string_view(yytext))
                     {
-                        ReportError::LongIdentifier(&yylloc, yytext);
+                        std::cout << item;
+                        const bool chIsDigit {item != '.' && item != '+' && item != '-' && item != 'E' && item != 'e'};
+                        if (chIsDigit || item == '.')
+                        {
+                            if (!foundE)
+                            {
+                                number += item;
+                            }
+                            else
+                            {
+                                suffix += item;
+                            }
+                        }
+                        else if (item == '+') { positiveExp = true; }
+                        else if (item == '-') { positiveExp = false; }
+                        else if (item == 'E' || item == 'e') { foundE = true; }
+                        else { std::cout << "Unregonized EXPONENT character" << item; }
                     }
-                    return T_Identifier; }
+                    /* Convert decimal and exponent value to double for pow() */
+                    const double dec {std::stod(number)};
+                    const double exp {std::stod(suffix)};
 
-[\n]          /* eat up newlines and ensure that they are read one at a time so line counts can be updated*/
+                    /* Caluclate value with exponent */
+                    double finalVal {dec * std::pow(10,exp)};
+
+                    /* For negative exponents, take reciprocal */
+                    if (!positiveExp) {finalVal = 1.0/finalVal; }
+
+                    yylval.doubleConstant = finalVal;
+                    return T_DoubleConstant;
+
+                    /*std::cout << " DEC: " << dec << " exp " << exp << " final val: " << std::setprecision(5) << finalVal << "\n";*/
+                }
+            }
+
+{DOUBLECONST}   {
+                    if (!commentActive)
+                    {
+                        yylval.doubleConstant = stod(yytext);
+                        return T_DoubleConstant;
+                    }
+                }
+"if"            { if (!commentActive) {return T_If;} }
+"int"           { if (!commentActive) {return T_Int;} }
+"for"           { if (!commentActive) {return T_For;} }
+"new"           { if (!commentActive) {return T_New;} }
+"bool"          { if (!commentActive) {return T_Bool;} }
+"else"          { if (!commentActive) {return T_Else;} }
+"null"          { if (!commentActive) {return T_Null;} }
+"this"          { if (!commentActive) {return T_This;} }
+"true"          { if (!commentActive) {yylval.boolConstant = true; return T_BoolConstant;}}
+"void"          { if (!commentActive) {return T_Void;} }
+"break"         { if (!commentActive) {return T_Break;} }
+"class"         { if (!commentActive) {return T_Class;} }
+"false"         { if (!commentActive) {yylval.boolConstant = false; return T_BoolConstant;}}
+"while"         { if (!commentActive) {return T_While;} }
+"Print"         { if (!commentActive) {return T_Print;} }
+"double"        { if (!commentActive) {return T_Double;} }
+"return"        { if (!commentActive) {return T_Return;} }
+"string"        { if (!commentActive) {return T_String;} }
+"extends"       { if (!commentActive) {return T_Extends;} }
+"NewArray"      { if (!commentActive) {return T_NewArray;} }
+"ReadLine"      { if (!commentActive) {return T_ReadLine;} }
+"interface"     { if (!commentActive) {return T_Interface;} }
+"implements"    { if (!commentActive) {return T_Implements;} }
+"ReadInteger"   { if (!commentActive) {return T_ReadInteger;} }
+{IDENT}         {
+                    if (!commentActive)
+                    {
+                        stream >> yylval.identifier;
+                        if (yyleng > MaxIdentLen)
+                        {
+                            ReportError::LongIdentifier(&yylloc, yytext);
+                        }
+                        return T_Identifier;
+                    }
+                }
+
+[\n]           /* consume newlines and ensure that they are read one at a time so line counts can be updated*/
 [\t]
-[[:space:]]+        /* eat up whitespace */
-.             { ReportError::UnrecogChar(&yylloc, yytext[0]); }
+[[:space:]]+   /* consume whitespace */
+.             { if (!commentActive) {ReportError::UnrecogChar(&yylloc, yytext[0]);} }
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
  * of the User Subroutines section. All text from here to the end of the
@@ -173,7 +264,6 @@ void InitScanner()
     yy_flex_debug = false;
     numLines = 1;
 }
-
 
 /* Function: DoBeforeEachAction()
  * ------------------------------
