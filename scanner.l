@@ -94,7 +94,6 @@ UNTERMSTRING \".*
   * %% markers which delimit the Rules section.
   */
 
-
 <activeComment><<EOF>>  {
                             ReportError::UntermComment();
                             yyterminate();
@@ -127,6 +126,7 @@ UNTERMSTRING \".*
                 return T_StringConstant;
             }
 
+0[xX][[:xdigit:]]+ { stream >> hex >> yylval.integerConstant; return T_IntConstant; }
 "<="            { return T_LessEqual; }
 ">="            { return T_GreaterEqual; }
 "=="            { return T_Equal; }

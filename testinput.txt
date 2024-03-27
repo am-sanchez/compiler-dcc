@@ -13,5 +13,6 @@ true        false
 3.1415E+332523f
 "This is a string"
 */
-
+0x111
+0XfF
 "adgsdlgjdsaljk
