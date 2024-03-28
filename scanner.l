@@ -65,6 +65,7 @@ std::stringstream stream;
  */
 static const size_t BUFF_SIZE {1024 * 4};
 auto copiedString {std::make_unique<char[]>(BUFF_SIZE)};
+string stringConstVal;
 
 %}
 
@@ -84,10 +85,9 @@ KEYWORD  void|int|double|bool|string|class|interface|null|this|extends|implement
 SINGLEOP [+\-*/%<>=!;,\.\[\]\(\)\{\}]
 DOUBLECONST [[:digit:]]+\.[[:digit:]]+
 EXPONENT [[:digit:]]+\.[[:digit:]]+[Ee][\+\-]?[[:digit:]]+
-UNTERMSTRING \".*
+UNTERMSTRING \"[^"]*$
 
 %x activeComment
-%x activeString
 
 %%             /* BEGIN RULES SECTION */
  /* All patterns and actions should be placed between the start and stop
@@ -121,11 +121,13 @@ UNTERMSTRING \".*
                  * by copying yytext, less the first and last characters,
                  * into copiedString.
                  */
-                memcpy(copiedString.get(), yytext + 1, yyleng - 2);
+                memcpy(copiedString.get(), yytext, yyleng);
                 yylval.stringConstant = copiedString.get();
                 return T_StringConstant;
             }
-
+{UNTERMSTRING}  {
+                    ReportError::UntermString(&yylloc, yytext);
+                }
 0[xX][[:xdigit:]]+ { stream >> hex >> yylval.integerConstant; return T_IntConstant; }
 "<="            { return T_LessEqual; }
 ">="            { return T_GreaterEqual; }
@@ -213,11 +215,12 @@ UNTERMSTRING \".*
                     }
                     return T_Identifier;
                 }
+[\t]            /* consume tabs */
 
-[\n]           /* consume newlines and ensure that they are read one at a time so line counts can be updated*/
-[\t]
-[[:space:]]+   /* consume whitespace */
-.             { ReportError::UnrecogChar(&yylloc, yytext[0]); }
+[\r][\n]           /* consume newlines (including windows EOL) */
+[\n]
+[ ]+   /* consume whitespace */ {cout <<  "consuming whitespace\n";}
+.             { cout << (int)yytext[0] ; ReportError::UnrecogChar(&yylloc, yytext[0]); }
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
  * of the User Subroutines section. All text from here to the end of the
@@ -268,9 +271,10 @@ static void DoBeforeEachAction()
 
     // Handle column position
     yylloc.first_column = col + 1;
-    if (yyleng >= 1 && yytext[0] == '\n')
+    if (yyleng >= 1 && yytext[yyleng-1] == '\n')
     {
-         col = 0; ++numLines;
+        cout << "incrementing\n";
+        col = 0; ++numLines;
     }
     else if (yyleng >= 1 && yytext[0] == '\t')
     {
