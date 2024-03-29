@@ -126,6 +126,10 @@ UNTERMSTRING \"[^"]*$
                 return T_StringConstant;
             }
 {UNTERMSTRING}  {
+                        for (auto item : std::string_view(yytext))
+                        {
+                             cout << static_cast<int>(item) << endl;
+                        }
                     ReportError::UntermString(&yylloc, yytext);
                 }
 0[xX][[:xdigit:]]+ { stream >> hex >> yylval.integerConstant; return T_IntConstant; }
@@ -217,9 +221,18 @@ UNTERMSTRING \"[^"]*$
                 }
 [\t]            /* consume tabs */
 
-[\r][\n]           /* consume newlines (including windows EOL) */
-[\n]
-[ ]+   /* consume whitespace */ {cout <<  "consuming whitespace\n";}
+[\r]           {
+                        /* consume newlines (including windows EOL) */
+                        /*
+                        for (auto item : std::string_view(yytext))
+                        {
+                             cout << static_cast<int>(item) << endl;
+                        }
+                        */
+                        cout << "carriage return\n";
+                  }
+[\n]                { cout << "newline\n"; }
+[ ]+   /* consume whitespace */
 .             { cout << (int)yytext[0] ; ReportError::UnrecogChar(&yylloc, yytext[0]); }
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
@@ -271,9 +284,9 @@ static void DoBeforeEachAction()
 
     // Handle column position
     yylloc.first_column = col + 1;
-    if (yyleng >= 1 && yytext[yyleng-1] == '\n')
+    if (yyleng >= 0 && yytext[yyleng-1] == '\n')
     {
-        cout << "incrementing\n";
+        cout << yyleng << " incrementing\n";
         col = 0; ++numLines;
     }
     else if (yyleng >= 1 && yytext[0] == '\t')
