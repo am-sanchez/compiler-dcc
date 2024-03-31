@@ -102,7 +102,7 @@ UNTERMSTRING \"[^"^\n]*?
                         }
 \/\*        {
                 // Begin Multiline comment
-                numLines++;
+                //numLines++;
                 // If starting a multi-line comment, increment line number.
                 BEGIN activeComment;
             }
@@ -111,9 +111,11 @@ UNTERMSTRING \"[^"^\n]*?
                         // End Multiline comment, return to normal matching mode
                         BEGIN INITIAL;
                     }
+<activeComment>\t
+<activeComment>\n
+<activeComment>.  /* consume characters while multiline comment is active */
 
-<activeComment>.+ /* consume characters while multiline comment is active */
-\/\/.*$     /* consume single line comments */ { ++numLines; }
+\/\/.*$     /* consume single line comments */ { /*++numLines;*/}
 \"[^\n]*\"  {
                 // Handle String Constants
                 // Clear instantiated char array
@@ -215,7 +217,7 @@ UNTERMSTRING \"[^"^\n]*?
 [\n]        /* consume newlines (line feed)*/
 [ ]+        /* consume spaces */
 .           {
-                // cout << static_cast<int>(yytext[0]);
+             //cout << static_cast<int>(yytext[0]);
                 ReportError::UnrecogChar(&yylloc, yytext[0]);
             }
 %%
