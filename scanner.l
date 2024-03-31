@@ -55,7 +55,6 @@ static void DoBeforeEachAction();
 static const int TAB_SIZE = 8;
 
 int numLines = 0, col = 0;
-char lastCharOfPrevToken;
 std::stringstream stream;
 
 /*
@@ -63,9 +62,8 @@ std::stringstream stream;
  * since MAX_SIZE produces bad malloc warnings when
  * used to instantiate char array.
  */
-static const size_t BUFF_SIZE {1024 * 4};
+static const size_t BUFF_SIZE {static_cast<size_t>(pow(2,16))};
 auto copiedString {std::make_unique<char[]>(BUFF_SIZE)};
-string stringConstVal;
 
 %}
 
@@ -79,13 +77,17 @@ string stringConstVal;
 /* Disable yywrap to prevent the need for linking the Flex library */
 %option noyywrap
 
-
 IDENT    [[:alpha:]][[:alnum:]_]*
 KEYWORD  void|int|double|bool|string|class|interface|null|this|extends|implements|for|while|if|else|return|break|new|NewArray|Print|ReadInteger|ReadLine
 SINGLEOP [+\-*/%<>=!;,\.\[\]\(\)\{\}]
 DOUBLECONST [[:digit:]]+\.[[:digit:]]+
 EXPONENT [[:digit:]]+\.[[:digit:]]+[Ee][\+\-]?[[:digit:]]+
-UNTERMSTRING \"[^"]*$
+
+/*
+ * For unterminated string, match a starting double quote, then
+ * as few non-double quote, non-newlines as possible.
+ */
+UNTERMSTRING \"[^"^\n]*?
 
 %x activeComment
 
@@ -110,26 +112,18 @@ UNTERMSTRING \"[^"]*$
                         BEGIN INITIAL;
                     }
 
-<activeComment>. /* consume characters while multiline comment is active */
+<activeComment>.+ /* consume characters while multiline comment is active */
 \/\/.*$     /* consume single line comments */ { ++numLines; }
 \"[^\n]*\"  {
                 // Handle String Constants
                 // Clear instantiated char array
                 memset(copiedString.get(), 0, BUFF_SIZE);
-                /*
-                 * Remove leading and trailing double quote characters
-                 * by copying yytext, less the first and last characters,
-                 * into copiedString.
-                 */
                 memcpy(copiedString.get(), yytext, yyleng);
                 yylval.stringConstant = copiedString.get();
+
                 return T_StringConstant;
             }
 {UNTERMSTRING}  {
-                        for (auto item : std::string_view(yytext))
-                        {
-                             cout << static_cast<int>(item) << endl;
-                        }
                     ReportError::UntermString(&yylloc, yytext);
                 }
 0[xX][[:xdigit:]]+ { stream >> hex >> yylval.integerConstant; return T_IntConstant; }
@@ -149,7 +143,6 @@ UNTERMSTRING \"[^"]*$
                 bool foundE {false};
                 for (auto item : std::string_view(yytext))
                 {
-                    //std::cout << item;
                     const bool chIsDigit {item != '.' && item != '+' && item != '-' && item != 'E' && item != 'e'};
                     if (chIsDigit || item == '.')
                     {
@@ -179,8 +172,6 @@ UNTERMSTRING \"[^"]*$
 
                 yylval.doubleConstant = finalVal;
                 return T_DoubleConstant;
-
-                /*std::cout << " DEC: " << dec << " exp " << exp << " final val: " << std::setprecision(5) << finalVal << "\n";*/
             }
 
 {DOUBLECONST}   {
@@ -211,29 +202,22 @@ UNTERMSTRING \"[^"]*$
 "interface"     { return T_Interface; }
 "implements"    { return T_Implements; }
 "ReadInteger"   { return T_ReadInteger; }
-{IDENT}         {
-                    stream >> yylval.identifier;
-                    if (yyleng > MaxIdentLen)
-                    {
-                        ReportError::LongIdentifier(&yylloc, yytext);
-                    }
-                    return T_Identifier;
+{IDENT}     {
+                stream >> yylval.identifier;
+                if (yyleng > MaxIdentLen)
+                {
+                    ReportError::LongIdentifier(&yylloc, yytext);
                 }
-[\t]            /* consume tabs */
-
-[\r]           {
-                        /* consume newlines (including windows EOL) */
-                        /*
-                        for (auto item : std::string_view(yytext))
-                        {
-                             cout << static_cast<int>(item) << endl;
-                        }
-                        */
-                        cout << "carriage return\n";
-                  }
-[\n]                { cout << "newline\n"; }
-[ ]+   /* consume whitespace */
-.             { cout << (int)yytext[0] ; ReportError::UnrecogChar(&yylloc, yytext[0]); }
+                return T_Identifier;
+            }
+[\t]        /* consume tabs */
+[\r]        /* consume carriage return */
+[\n]        /* consume newlines (line feed)*/
+[ ]+        /* consume spaces */
+.           {
+                // cout << static_cast<int>(yytext[0]);
+                ReportError::UnrecogChar(&yylloc, yytext[0]);
+            }
 %%
 /* The closing %% above marks the end of the Rules section and the beginning
  * of the User Subroutines section. All text from here to the end of the
@@ -284,22 +268,23 @@ static void DoBeforeEachAction()
 
     // Handle column position
     yylloc.first_column = col + 1;
+
     if (yyleng >= 0 && yytext[yyleng-1] == '\n')
     {
-        cout << yyleng << " incrementing\n";
+        /*
+         * Reset column number and increment line number if
+         * the last character in input is a newline character
+         */
         col = 0; ++numLines;
     }
     else if (yyleng >= 1 && yytext[0] == '\t')
     {
+        // Increment column number by preset tab size
         col += TAB_SIZE;
     }
     else
     {
-        /*
-        * Update current column only when NOT
-        * reading a newline character
-        */
-
+        // Update current column by input length
         col += yyleng;
     }
     yylloc.last_column = col;
