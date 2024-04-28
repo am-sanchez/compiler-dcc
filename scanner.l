@@ -102,7 +102,6 @@ UNTERMSTRING \"[^"^\n]*?
                         }
 \/\*        {
                 // Begin Multiline comment
-                //numLines++;
                 // If starting a multi-line comment, increment line number.
                 BEGIN activeComment;
             }
@@ -115,7 +114,7 @@ UNTERMSTRING \"[^"^\n]*?
 <activeComment>\n
 <activeComment>.  /* consume characters while multiline comment is active */
 
-\/\/.*$     /* consume single line comments */ { /*++numLines;*/}
+\/\/.*$     /* consume single line comments */
 \"[^\n]*\"  {
                 // Handle String Constants
                 // Clear instantiated char array
@@ -206,8 +205,11 @@ UNTERMSTRING \"[^"^\n]*?
 "ReadInteger"   { return T_ReadInteger; }
 {IDENT}     {
                 stream >> yylval.identifier;
+
                 if (yyleng > MaxIdentLen)
                 {
+                    // For some reason, yyloc.first_line is set to zero after setting yyval.identifier
+                    yylloc.first_line = numLines;
                     ReportError::LongIdentifier(&yylloc, yytext);
                 }
                 return T_Identifier;
