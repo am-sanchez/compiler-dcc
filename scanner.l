@@ -89,6 +89,9 @@ EXPONENT [[:digit:]]+\.[[:digit:]]*[Ee][\+\-]?[[:digit:]]+
  */
 UNTERMSTRING \"[^"^\n]*?
 
+/*
+ * Exclusive <start condition> for active comments
+ */
 %x activeComment
 
 %%             /* BEGIN RULES SECTION */
@@ -114,7 +117,7 @@ UNTERMSTRING \"[^"^\n]*?
 <activeComment>\n
 <activeComment>.  /* consume characters while multiline comment is active */
 
-\/\/.*$     /* consume single line comments */
+\/\/.*$       /* consume single line comments */
 \"[^\n"]*?\"  {
                 // Handle String Constants
                 /*
@@ -233,7 +236,6 @@ UNTERMSTRING \"[^"^\n]*?
 [\n]        /* consume newlines (line feed)*/
 [ ]+        /* consume spaces */
 .           {
-             //cout << static_cast<int>(yytext[0]);
                 ReportError::UnrecogChar(&yylloc, yytext[0]);
             }
 %%
@@ -242,7 +244,6 @@ UNTERMSTRING \"[^"^\n]*?
  * file is copied verbatim to the end of the generated lex.yy.c file.
  * This section is where you put definitions of helper functions.
  */
-
 
 /* Function: InitScanner
  * ---------------------
