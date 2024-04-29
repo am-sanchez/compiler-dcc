@@ -7,7 +7,7 @@ for file in samples/*.frag; do
     compFileName=$(basename -- "${file}")
     compFileName="samples/${compFileName%.*}.out"
     echo "${compFileName}"
-    $(./dcc < "${file}" > "${testOutFileName}")
+    $(./dcc < "${file}" &> "${testOutFileName}")
 
     if cmp "${compFileName}" "${testOutFileName}"; then
         printf 'The file "%s" is the same as "%s"\n' "${compFileName}" "${testOutFileName}"
