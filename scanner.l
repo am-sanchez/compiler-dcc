@@ -204,14 +204,23 @@ UNTERMSTRING \"[^"^\n]*?
 "implements"    { return T_Implements; }
 "ReadInteger"   { return T_ReadInteger; }
 {IDENT}     {
-                stream >> yylval.identifier;
+                // Clear dynamic string buffer
+                memset(copiedString.get(), 0, BUFF_SIZE);
+
+                // Copy lexeme to dynamic string buffer
+                memcpy(copiedString.get(), yytext, yyleng);
+
+                // Copy contents of dynamic string buffer into Union, up to max length (31)
+                memcpy(yylval.identifier, copiedString.get(), MaxIdentLen);
+
+                // Append null character to CString in Union
+                yylval.identifier[MaxIdentLen] = '\0';
 
                 if (yyleng > MaxIdentLen)
                 {
-                    // For some reason, yyloc.first_line is set to zero after setting yyval.identifier
-                    yylloc.first_line = numLines;
                     ReportError::LongIdentifier(&yylloc, yytext);
                 }
+
                 return T_Identifier;
             }
 [\t]        /* consume tabs */
