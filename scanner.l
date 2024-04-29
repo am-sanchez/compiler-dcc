@@ -115,8 +115,13 @@ UNTERMSTRING \"[^"^\n]*?
 <activeComment>.  /* consume characters while multiline comment is active */
 
 \/\/.*$     /* consume single line comments */
-\"[^\n]*\"  {
+\"[^\n"]*?\"  {
                 // Handle String Constants
+                /*
+                 * Regex match description:
+                 * Match quote, then optionally, as few non-newline,
+                 * non-quotes until next quote is encountered
+                 */
                 // Clear instantiated char array
                 memset(copiedString.get(), 0, BUFF_SIZE);
                 memcpy(copiedString.get(), yytext, yyleng);
