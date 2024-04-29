@@ -5,11 +5,6 @@ message("CMake Modules: ${CMAKE_MODULE_PATH}")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-#file(GLOB SOURCES "*.cc")
-#file(GLOB SOURCES "*.c")
-# add_executable(dcc main.cc)
-
-
 set( project_name "dcc" )
 message("Project Name: ${project_name}")
 project(${project_name})
@@ -24,5 +19,3 @@ add_executable(${project_name}
    src/utility.cc
    ${FLEX_MyScanner_OUTPUTS}
 )
-
-#target_link_libraries(${project_name} ${FLEX_LIBRARIES})
