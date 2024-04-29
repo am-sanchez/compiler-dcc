@@ -81,7 +81,7 @@ IDENT    [[:alpha:]][[:alnum:]_]*
 KEYWORD  void|int|double|bool|string|class|interface|null|this|extends|implements|for|while|if|else|return|break|new|NewArray|Print|ReadInteger|ReadLine
 SINGLEOP [+\-*/%<>=!;,\.\[\]\(\)\{\}]
 DOUBLECONST [[:digit:]]+\.[[:digit:]]+
-EXPONENT [[:digit:]]+\.[[:digit:]]+[Ee][\+\-]?[[:digit:]]+
+EXPONENT [[:digit:]]+\.[[:digit:]]*[Ee][\+\-]?[[:digit:]]+
 
 /*
  * For unterminated string, match a starting double quote, then
