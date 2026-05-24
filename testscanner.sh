@@ -9,7 +9,7 @@ echo "=== dcc SCANNER TEST ==="
 echo
 echo "Comparing output of ./dcc samples/*.frag against expected output within samples/*.out..."
 echo
-for file in samples/*.frag; do
+for file in samples/*.{frag,decaf}; do
     compFileName=$(basename -- "${file}")
     compFileName="samples/${compFileName%.*}.out"
 
