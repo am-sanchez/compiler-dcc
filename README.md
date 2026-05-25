@@ -5,12 +5,15 @@ Projects based on Stanford's CS143 - Intro to Compilers, 2012 (http://web.stanfo
 
 Scanner uses Fast Lexical Anaylzer (FLEX)
 
+Project is configured to create all build artifacts in `build` directory after running `cmake` command
+
+To compile:
+`cmake -S . -B build && cmake --build build`
+
 To run:
+`./build/dcc < {INPUTFILE}`
 
-`cmake .` <br>
-`make` <br>
-`./dcc < testinput.txt`
+e.g. `./build/dcc < samples/badident.frag`
 
-To run tests:
-`cmake . ; make ; ctest --output-on-failure`
-
+To execute tests:
+`cmake -S . -B build && cmake --build build` && ctest --test-dir build --output-on-failure

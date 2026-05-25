@@ -3,12 +3,9 @@ CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
 Makefile
-Testing/
+build/
 *code-workspace
 CTestTestfile.cmake
 
-# "Decaf" language compiler exectuable
-dcc
-
 # flex output file
-lex.yy.cc
+src/lex.yy.cc
