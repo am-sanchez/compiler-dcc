@@ -6,6 +6,6 @@ Makefile
 build/
 *code-workspace
 CTestTestfile.cmake
-
+Testing/
 # flex output file
 src/lex.yy.cc
