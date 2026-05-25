@@ -10,3 +10,7 @@ To run:
 `cmake .` <br>
 `make` <br>
 `./dcc < testinput.txt`
+
+To run tests:
+`cmake . ; make ; ctest --output-on-failure`
+
