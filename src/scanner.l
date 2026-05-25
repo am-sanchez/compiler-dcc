@@ -17,6 +17,7 @@
 #include <string_view>
 #include <iostream>
 #include <sstream>
+#include <memory>
 #include "scanner.h"
 #include "utility.h" // for PrintDebug()
 #include "errors.h"

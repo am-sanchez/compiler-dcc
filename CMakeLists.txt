@@ -2,12 +2,13 @@ cmake_minimum_required(VERSION 3.5)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 message("CMake Modules: ${CMAKE_MODULE_PATH}")
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
-
 set( project_name "dcc" )
 message("Project Name: ${project_name}")
 project(${project_name})
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
 find_package(FLEX)
 FLEX_TARGET(MyScanner src/scanner.l  src/lex.yy.cc COMPILE_FLAGS -Ld)
 
@@ -18,6 +19,17 @@ add_executable(${project_name}
     src/utility.cc
     ${FLEX_MyScanner_OUTPUTS}
 )
+
+# Fix MSVC compiler warnings and errors for Flex and unsafe C functions
+if(MSVC)
+    target_compile_definitions(${project_name} PRIVATE
+        _CRT_SECURE_NO_WARNINGS    # Silences C4996 'vsprintf' unsafe warnings
+        YY_NO_UNISTD_H             # Fixes C1083 missing 'unistd.h' error
+        isatty=_isatty             # Maps POSIX isatty to Windows _isatty
+    )
+    # Forces inclusion of stdint.h (for macros) AND io.h (for _isatty definition)
+    target_compile_options(${project_name} PRIVATE /FI"stdint.h" /FI"io.h")
+endif()
 
 # Enable CTest
 enable_testing()
