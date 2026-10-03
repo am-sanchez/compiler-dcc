@@ -16,4 +16,4 @@ To run:
     - e.g. `./build/dcc < samples/badident.frag`
 
 To execute tests:
-`cmake -S . -B build && cmake --build build` && ctest --test-dir build --output-on-failure`
+`cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure`
