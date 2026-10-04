@@ -5,18 +5,21 @@ Projects based on Stanford's CS143 - Intro to Compilers, 2012 (http://web.stanfo
 
 ## Enhancements to Original Project
 I've updated the original assigment files to also:
-* Use C++
+* Enable C++17 Compatibility
     * Including modern C++ STL constructs like Smart Pointers
-    * Original project files were entirely in C
-* Utilize CMake to
+    * **Original project files were entirely in C**
+* Utilize CMake
     * Simplify compilation commands
     * Automate Tests
         * Place original assignment project's test files into a directory and write CTest cases to invoke `dcc` application with input files and compare against files of expected output (provided by original assignment author)
     * Add Cross-platform support
+        * Original project files targeted Windows environment.
+        * **All of my updates are being done on Mac**
 * Utilize CI/CD (Github actions)
+    * See `github/workflows/cmake-multi-platform.yml`
     * Cross-platform support
-        * Project compiles and successfully executes automated tests on Windows, Linux, and Mac
-        * TODO - archive artifacts
+        * Project compiles and successfully executes automated tests on Windows and Linux (Ubuntu)
+        * Archive artifacts
 
 ## CMake File
 * Invokes FLEX to take in src/scanner.l and output to src/lex.yy.cc
