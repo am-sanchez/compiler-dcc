@@ -81,3 +81,12 @@ jobs:
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest --build-config ${{ matrix.build_type }}
+
+    - name: Archive Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: am-sanchez-dcc        # Optional: Name of your artifact (defaults to "artifact")
+        path: |
+          build/dcc                # Required: File, directory, or wildcard pattern to archive
+          samples
+        retention-days: 14         # Optional: How long to keep it (1-90 days)
