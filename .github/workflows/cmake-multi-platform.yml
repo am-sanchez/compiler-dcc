@@ -55,6 +55,30 @@ jobs:
       run: |
         echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+    # This step copy/pasted from AI (Gemini)
+    - name: Generate Artifact Name
+      id: info
+      shell: bash
+      run: |
+        # 1. Simplify OS string (windows-latest -> windows, ubuntu-latest -> ubuntu)
+        if [[ "${{ matrix.os }}" == *"windows"* ]]; then
+          OS_STR="win"
+        else
+          OS_STR="ubuntu"
+        fi
+
+        # 2. Match compiler to a clean string
+        if [[ "${{ matrix.c_compiler }}" == "cl" ]]; then
+          COMP_STR="msvc"
+        elif [[ "${{ matrix.c_compiler }}" == "gcc" ]]; then
+          COMP_STR="gcc"
+        else
+          COMP_STR="clang"
+        fi
+
+        # 3. Export full name (e.g., ubuntu-gcc)
+        echo "artifact_distro=${OS_STR}-${COMP_STR}" >> $GITHUB_OUTPUT
+
     # Install WinFlexBison ONLY if running on a Windows environment
     - name: Install Flex and Bison (Windows)
       if: matrix.os == 'windows-latest'
@@ -85,7 +109,7 @@ jobs:
     - name: Archive Build Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: am-sanchez-dcc        # Optional: Name of your artifact (defaults to "artifact")
+        name: am-sanchez-dcc-${{ steps.info.outputs.artifact_distro }}        # Optional: Name of your artifact (defaults to "artifact")
         path: |
           build/dcc                # Required: File, directory, or wildcard pattern to archive
           samples
