@@ -10,6 +10,7 @@
 #include "errors.h"
 #include "scanner.h"
 #include "location.h"
+#include "parser.h"
 
 /* Function: PrintOneToken()
  * Usage: PrintOneToken(T_Double, "3.5", val, loc);
@@ -59,6 +60,8 @@ int main(int argc, char *argv[])
     TokenType token;
     while ((token = (TokenType)yylex()) != 0)
         PrintOneToken(token, yytext, yylval, yylloc);
+    InitParser();
+    yyparse();
     return (ReportError::NumErrors() == 0? 0 : -1);
 }
 
