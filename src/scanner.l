@@ -18,9 +18,11 @@
 #include <iostream>
 #include <sstream>
 #include <memory>
+
 #include "scanner.h"
 #include "utility.h" // for PrintDebug()
 #include "errors.h"
+#include "parser.h" // for yylval
 
 /* Global variable: yylval
  * -----------------------
@@ -30,14 +32,14 @@
  * future, this variable will be declared for us in the y.tab.c file
  * produced by Yacc, but for now, we declare it manually.
  */
-YYSTYPE yylval;  // manually declared for pp1, later Yacc provides
+// YYSTYPE yylval;  // manually declared for pp1, later Yacc provides
 
 /* Global variable: yylloc
  * -----------------------
  * This global variable is how we get position information about the token
  * just scanned to the client. (Operates similarly to yylval above)
  */
-struct yyltype yylloc; // manually dclared for pp1, later Yacc provides
+// struct yyltype yylloc; // manually dclared for pp1, later Yacc provides
 
 /* Macro: YY_USER_ACTION
  * ---------------------
@@ -263,6 +265,11 @@ void InitScanner()
     PrintDebug("lex", "Initializing scanner");
     yy_flex_debug = false;
     numLines = 1;
+}
+
+const char* GetLineNumbered(const int n)
+{
+    return nullptr;
 }
 
 /* Function: DoBeforeEachAction()

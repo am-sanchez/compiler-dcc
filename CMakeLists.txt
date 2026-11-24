@@ -9,14 +9,21 @@ project(${project_name})
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-find_package(FLEX)
-FLEX_TARGET(MyScanner src/scanner.l  src/lex.yy.cc COMPILE_FLAGS -Ld)
+find_package(FLEX REQUIRED)
+find_package(BISON REQUIRED)
 
-include_directories(include/dcc)
-add_executable(${project_name}
+BISON_TARGET(MyParser src/parser.y ${CMAKE_CURRENT_BINARY_DIR}/y.tab.cpp DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/y.tab.h)
+
+FLEX_TARGET(MyScanner src/scanner.l ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.cpp COMPILE_FLAGS -Ld)
+
+ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
+
+include_directories(include/ ${CMAKE_CURRENT_BINARY_DIR})
+add_executable( ${project_name}
     src/main.cc
     src/errors.cc
     src/utility.cc
+    ${BISON_MyParser_OUTPUTS}
     ${FLEX_MyScanner_OUTPUTS}
 )
 
@@ -30,6 +37,8 @@ if(MSVC)
     # Forces inclusion of stdint.h (for macros) AND io.h (for _isatty definition)
     target_compile_options(${project_name} PRIVATE /FI"stdint.h" /FI"io.h")
 endif()
+
+### TESTING ###
 
 # Enable CTest
 enable_testing()
