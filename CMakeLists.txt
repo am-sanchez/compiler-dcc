@@ -59,15 +59,15 @@ function(add_scanner_test TEST_NAME INPUT_FILE EXPECTED_FILE)
     add_test(NAME ${TEST_NAME}-comparison
              COMMAND ${CMAKE_COMMAND}
              -D APP_EXEC=$<TARGET_FILE:${project_name}>
-             -D INPUT_FILE=${CMAKE_SOURCE_DIR}/samples/${INPUT_FILE}
+             -D INPUT_FILE=${CMAKE_SOURCE_DIR}/samples/scanner/${INPUT_FILE}
              -D ACTUAL_OUTPUT=${ACTUAL_OUTPUT}
-             -D EXPECTED_FILE=${CMAKE_SOURCE_DIR}/samples/${EXPECTED_FILE}
+             -D EXPECTED_FILE=${CMAKE_SOURCE_DIR}/samples/scanner/${EXPECTED_FILE}
              -P "${CMAKE_SOURCE_DIR}/cmake/RunComparisonTest.cmake"
     )
     add_test(NAME ${TEST_NAME}-exitcode
             COMMAND ${CMAKE_COMMAND}
             -D APP_EXEC=$<TARGET_FILE:${project_name}>
-            -D INPUT_FILE=${CMAKE_SOURCE_DIR}/samples/${INPUT_FILE}
+            -D INPUT_FILE=${CMAKE_SOURCE_DIR}/samples/scanner/${INPUT_FILE}
             -D EXPECT_SCAN_ERROR=${EXPECT_SCAN_ERROR}
             -P "${CMAKE_SOURCE_DIR}/cmake/RunExitCodeTest.cmake"
     )
