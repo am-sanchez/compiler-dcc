@@ -12,17 +12,17 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 find_package(FLEX REQUIRED)
 find_package(BISON REQUIRED)
 
-BISON_TARGET(MyParser src/parser.y ${CMAKE_CURRENT_BINARY_DIR}/y.tab.cpp DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/y.tab.h)
+BISON_TARGET(MyParser ${CMAKE_SOURCE_DIR}/src/parser.y ${CMAKE_CURRENT_BINARY_DIR}/y.tab.cpp DEFINES_FILE ${CMAKE_CURRENT_BINARY_DIR}/y.tab.h COMPILE_FLAGS "-tv")
 
-FLEX_TARGET(MyScanner src/scanner.l ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.cpp COMPILE_FLAGS -Ld)
+FLEX_TARGET(MyScanner ${CMAKE_SOURCE_DIR}/src/scanner.l ${CMAKE_CURRENT_BINARY_DIR}/lex.yy.cpp COMPILE_FLAGS -Ld)
 
 ADD_FLEX_BISON_DEPENDENCY(MyScanner MyParser)
 
-include_directories(include/ ${CMAKE_CURRENT_BINARY_DIR})
+file(GLOB DCC_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc")
+
+include_directories(${CMAKE_SOURCE_DIR}/include/ ${CMAKE_CURRENT_BINARY_DIR})
 add_executable( ${project_name}
-    src/main.cc
-    src/errors.cc
-    src/utility.cc
+    ${DCC_SOURCES}
     ${BISON_MyParser_OUTPUTS}
     ${FLEX_MyScanner_OUTPUTS}
 )

@@ -20,9 +20,11 @@
 #include <memory>
 
 #include "scanner.h"
+#include "ast_decl.h"
 #include "utility.h" // for PrintDebug()
 #include "errors.h"
-#include "parser.h" // for yylval
+
+#include "y.tab.h" // for yylval
 
 /* Global variable: yylval
  * -----------------------
