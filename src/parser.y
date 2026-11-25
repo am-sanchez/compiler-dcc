@@ -41,11 +41,17 @@ void yyerror(const char *msg); // standard error-handling routine
 %union {
     int integerConstant;
     bool boolConstant;
-    char *stringConstant;
+    char* stringConstant;
     double doubleConstant;
     char identifier[MaxIdentLen+1]; // +1 for terminating null
-    Decl *decl;
-    List<Decl*> *declList;
+    Decl* decl;
+    List<Decl*>* declList;
+
+    // Added items for assignment 2
+    VarDecl* varDecl;
+    ClassDecl* classDecl;
+    InterfaceDecl* ifaceDecl;
+    FnDecl* funcDecl;
 }
 
 
@@ -79,8 +85,12 @@ void yyerror(const char *msg); // standard error-handling routine
  * of the union named "declList" which is of type List<Decl*>.
  * pp2: You'll need to add many of these of your own.
  */
-%type <declList>  DeclList
-%type <decl>      Decl
+%type <declList>    DeclList
+%type <decl>        Decl
+%type <varDecl>     VarDecl
+%type <funcDecl>    FuncDecl
+%type <classDecl>   ClassDecl
+%type <ifaceDecl>   IfaceDecl
 
 %%
 /* Rules
@@ -105,10 +115,28 @@ DeclList  :    DeclList Decl        { ($$=$1)->Append($2); }
           |    Decl                 { ($$ = new List<Decl*>)->Append($1); }
           ;
 
-Decl      :    T_Void               { /* pp2: replace with correct rules  */ }
+Decl      :    VarDecl               { /* pp2: replace with correct rules  */ }
+          |    FuncDecl              { /* pp2: replace with correct rules  */ }
+          |    ClassDecl             { /* pp2: replace with correct rules  */ }
+          |    IfaceDecl             { /* pp2: replace with correct rules  */ }
+          ;
+
+VarDecl   :    T_Void               { /* pp2: replace with correct rules  */ }
+          |    T_Bool             { /* pp2: replace with correct rules  */ }
           ;
 
 
+FuncDecl  :    T_Void               { /* pp2: replace with correct rules  */ }
+          |    T_Bool             { /* pp2: replace with correct rules  */ }
+          ;
+
+ClassDecl  :    T_Void               { /* pp2: replace with correct rules  */ }
+           |    T_Bool             { /* pp2: replace with correct rules  */ }
+           ;
+
+IfaceDecl  :    T_Void               { /* pp2: replace with correct rules  */ }
+           |    T_Bool             { /* pp2: replace with correct rules  */ }
+           ;
 
 %%
 
