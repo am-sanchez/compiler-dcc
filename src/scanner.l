@@ -20,7 +20,7 @@
 #include <memory>
 
 #include "scanner.h"
-#include "ast_decl.h"
+#include "ast_decl.h" // Needed for Decl class by lex.yy.cpp which includes y.tab.h due to inclusion below
 #include "utility.h" // for PrintDebug()
 #include "errors.h"
 
