@@ -48,10 +48,30 @@ void yyerror(const char *msg); // standard error-handling routine
     List<Decl*>* declList;
 
     // Added items for assignment 2
+    // declarations
     VarDecl* varDecl;
     ClassDecl* classDecl;
     InterfaceDecl* ifaceDecl;
     FnDecl* funcDecl;
+
+    // types
+    Type* type;
+    NamedType* namedType;
+    ArrayType* arrayType;
+
+    // statments
+    Stmt* stmt;
+    StmtBlock* stmtBlock;
+    ConditionalStmt* conStmt;
+    LoopStmt* loopStmt;
+    ForStmt* forStmt;
+    WhileStmt* whileStmt;
+    IfStmt* ifStmt;
+    BreakStmt* breakStmt;
+    ReturnStmt* returnStmt;
+    PrintStmt* printStmt;
+
+
 }
 
 
@@ -87,10 +107,24 @@ void yyerror(const char *msg); // standard error-handling routine
  */
 %type <declList>    DeclList
 %type <decl>        Decl
-%type <varDecl>     VarDecl
+%type <varDecl>     VarDecl Variable Formals
 %type <funcDecl>    FuncDecl
 %type <classDecl>   ClassDecl
 %type <ifaceDecl>   IfaceDecl
+%type <type>        Type
+%type <namedType>   NamedType
+%type <arrayType>   ArrayType
+%type <stmt>        Statement
+%type <stmtBlock>   StatmentBlock
+%type <conStmt>     ConditionalStatment
+%type <loopStmt>    LoopStatment
+%type <forStmt>     ForStatment
+%type <whileStmt>   WhileStatment
+%type <ifStmt>      IfStatment
+%type <breakStmt>   BreakStatment
+%type <returnStmt>  ReturnStatment
+%type <printStmt>   PrintStatment
+
 
 %%
 /* Rules
@@ -121,14 +155,35 @@ Decl      :    VarDecl               { /* pp2: replace with correct rules  */ }
           |    IfaceDecl             { /* pp2: replace with correct rules  */ }
           ;
 
-VarDecl   :    T_Void               { /* pp2: replace with correct rules  */ }
+VarDecl   :    Variable ';'               { /* pp2: replace with correct rules  */ }
+          |
+          ;
+
+Variable  :    Type T_Identifier               { /* pp2: replace with correct rules  */ }
+          |
+          ;
+
+Type      :    T_Int                { /* pp2: replace with correct rules  */ }
+          |    T_Double             { /* pp2: replace with correct rules  */ }
+          |    T_Bool               { /* pp2: replace with correct rules  */ }
+          |    T_String             { /* pp2: replace with correct rules  */ }
+          |    T_Identifier         { /* pp2: replace with correct rules  */ }
+          |    Type '[' ']'         { /* pp2: replace with correct rules  */ }
+          ;
+
+
+FuncDecl  :    Type T_Identifier '(' Formals ')' StmtBloc               { /* pp2: replace with correct rules  */ }
           |    T_Bool             { /* pp2: replace with correct rules  */ }
           ;
 
 
-FuncDecl  :    T_Void               { /* pp2: replace with correct rules  */ }
-          |    T_Bool             { /* pp2: replace with correct rules  */ }
-          ;
+Formals    :
+           |
+           ;
+
+StmtBlock  :
+           |
+           ;
 
 ClassDecl  :    T_Void               { /* pp2: replace with correct rules  */ }
            |    T_Bool             { /* pp2: replace with correct rules  */ }
